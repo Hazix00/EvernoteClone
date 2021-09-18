@@ -21,5 +21,31 @@ namespace EvernoteClone.View
         {
             InitializeComponent();
         }
+
+        private void Exit_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
+
+        private void contentRichTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var richtbx = sender as RichTextBox;
+            int amountChars = new TextRange(richtbx.Document.ContentStart, richtbx.Document.ContentEnd).Text.Length;
+            statusTextBlock.Text = $"Document length: {amountChars} Characters";
+        }
+
+        private void boldTextButton_Click(object sender, RoutedEventArgs e)
+        {
+            var currentFontWeight = contentRichTextBox.Selection.GetPropertyValue(TextElement.FontWeightProperty);
+            var theType = currentFontWeight.GetType().Name;
+
+            FontWeight fontWeight = theType == "NamedObject" || (currentFontWeight.GetType() == typeof(FontWeight) && (FontWeight)currentFontWeight == FontWeights.Normal)
+                ? FontWeights.Bold
+                : FontWeights.Normal;
+
+            contentRichTextBox.Selection.ApplyPropertyValue(TextElement.FontWeightProperty, fontWeight);
+            
+            
+        }
     }
 }

@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:EvernoteClone.View"
         xmlns:vm="clr-namespace:EvernoteClone.ViewModel"
         mc:Ignorable="d"
-        Title="Notes" Height="300" Width="300">
+        Title="Notes" Height="480" Width="800">
     <Window.Resources>
         <vm:NotesVM x:Key="vm"/>
     </Window.Resources>
@@ -16,15 +16,36 @@
                 <MenuItem Header="New Notebook" Command="{Binding NewNotebookCommand}"/>
                 <MenuItem Header="New Note" Command="{Binding NewNoteCommand}" CommandParameter="{Binding SelectedNotebook}"/>
                 <Separator/>
-                <MenuItem Header="Exit"/>
+                <MenuItem Header="Exit" Click="Exit_Click"/>
             </MenuItem>
         </Menu>
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock x:Name="statusTextBlock" Text="hello"/>
+            </StatusBarItem>
+        </StatusBar>
+        <ListView Width="140" ItemsSource="{Binding Notebooks}" 
+                  SelectedValue="{Binding SelectedNotebook, Mode=TwoWay}">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Name}"/>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+        <ListView Width="140" ItemsSource="{Binding Notes}"
+                  DisplayMemberPath="Title"></ListView>
+        <ToolBarTray DockPanel.Dock="Top">
+            <ToolBar>
+                <Button Content="Speech"/>
+                <Button x:Name="boldTextButton"
+                        Click="boldTextButton_Click">
+                    <TextBlock Text="B" FontWeight="Bold"/>
+                </Button>
+            </ToolBar>
+        </ToolBarTray>
+        
         <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*"/>
-                <ColumnDefinition Width="157*"/>
-            </Grid.ColumnDefinitions>
-
+            <RichTextBox x:Name="contentRichTextBox" TextChanged="contentRichTextBox_TextChanged" />
         </Grid>
     </DockPanel>
 </Window>

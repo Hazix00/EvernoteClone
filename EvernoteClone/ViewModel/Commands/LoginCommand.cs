@@ -9,7 +9,11 @@ namespace EvernoteClone.ViewModel.Commands
     {
         public LoginVM LoginVM { get; }
 
-        public event EventHandler CanExecuteChanged;
+        public event EventHandler CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
 
         public LoginCommand(LoginVM loginVM)
         {
