@@ -7,14 +7,14 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Windows;
 
 namespace EvernoteClone.ViewModel
 {
     public class NotesVM : INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler PropertyChanged;
         public ObservableCollection<Notebook> Notebooks { get; set; }
-
+        public ObservableCollection<Note> Notes { get; set; }
         private Notebook selectedNotebook;
         public Notebook SelectedNotebook
         {
@@ -25,27 +25,65 @@ namespace EvernoteClone.ViewModel
                 GetNotes();
             }
         }
-        public ObservableCollection<Note> Notes { get; set; }
-        public NewNotebookCommand NewNotebookCommand { get; }
-        public NewNoteCommand NewNoteCommand { get; }
+
+        private Note selectedNote;
+
+        public Note SelectedNote
+        {
+            get => selectedNote;
+            set
+            {
+                selectedNote = value;
+                SelectedNoteChanged?.Invoke(this, new EventArgs());
+            }
+        }
+
+        private Visibility isVisible;
+        public Visibility IsVisible
+        {
+            get => isVisible;
+            set
+            {
+                isVisible = value;
+            }
+        }
+
+        public NewNotebookCommand NewNotebookCommand { get; set; }
+        public NewNoteCommand NewNoteCommand { get; set; }
+        public EditCommand EditCommand { get; set; }
+        public EndEditingCommand EndEditingCommand { get; set; }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public event EventHandler SelectedNoteChanged;
 
         public NotesVM()
         {
-            NewNotebookCommand = new NewNotebookCommand(this);
             NewNoteCommand = new NewNoteCommand(this);
+            NewNotebookCommand = new NewNotebookCommand(this);
+            EditCommand = new EditCommand(this);
+            EndEditingCommand = new EndEditingCommand(this);
 
-            //GetNotebooks();
+            Notebooks = new ObservableCollection<Notebook>();
+            Notes = new ObservableCollection<Note>();
+
+            IsVisible = Visibility.Collapsed;
+
+            GetNotebooks();
         }
 
-        public void CreateNewNotebook()
+        public void CreateNotebook()
         {
-            Notebook newNotebook = new Notebook()
+            Notebook newNotebook = new Notebook
             {
-                Name = "Untitled Notebook"
+                Name = "Notebook"
             };
+
             DatabaseHelper.Insert(newNotebook);
+
+            GetNotebooks();
         }
-        public void CreateNewNote()
+
+        public void CreateNote(int notebookId)
         {
             DateTime time = DateTime.Now;
             Note newNote = new Note()
@@ -55,16 +93,20 @@ namespace EvernoteClone.ViewModel
                 UpdatedAt = time,
                 Title = "Untitled"
             };
+
             DatabaseHelper.Insert(newNote);
+
+            GetNotes();
         }
 
-        public void GetNotebooks()
+        private void GetNotebooks()
         {
             List<Notebook> notebooks = DatabaseHelper.Read<Notebook>();
             Notebooks?.Clear();
             Notebooks = new ObservableCollection<Notebook>(notebooks);
         }
-        public void GetNotes()
+
+        private void GetNotes()
         {
             if (SelectedNotebook == null) return;
 
@@ -73,5 +115,18 @@ namespace EvernoteClone.ViewModel
             Notes = new ObservableCollection<Note>(notes);
         }
 
+
+
+        public void StartEditing()
+        {
+            IsVisible = Visibility.Visible;
+        }
+
+        public void StopEditing(Notebook notebook)
+        {
+            IsVisible = Visibility.Collapsed;
+            DatabaseHelper.Update(notebook);
+            GetNotebooks();
+        }
     }
 }

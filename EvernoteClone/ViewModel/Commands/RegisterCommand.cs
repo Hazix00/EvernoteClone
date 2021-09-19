@@ -7,17 +7,12 @@ namespace EvernoteClone.ViewModel.Commands
 {
     public class RegisterCommand : ICommand
     {
-        public LoginVM LoginVM { get; }
+        public LoginVM ViewModel { get; set; }
+        public event EventHandler CanExecuteChanged;
 
-        public event EventHandler CanExecuteChanged
+        public RegisterCommand(LoginVM vm)
         {
-            add { CommandManager.RequerySuggested += value; }
-            remove { CommandManager.RequerySuggested -= value; }
-        }
-
-        public RegisterCommand(LoginVM loginVM)
-        {
-            LoginVM = loginVM;
+            ViewModel = vm;
         }
 
         public bool CanExecute(object parameter)
@@ -27,7 +22,7 @@ namespace EvernoteClone.ViewModel.Commands
 
         public void Execute(object parameter)
         {
-            //TODO : Register functionality
+            //TODO: Call register from ViewModel
         }
     }
 }

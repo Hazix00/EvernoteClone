@@ -1,16 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Windows.Input;
 
 namespace EvernoteClone.ViewModel.Commands
 {
-    public class LoginCommand :ICommand
+    public class EditCommand : ICommand
     {
-        public LoginVM ViewModel { get; set; }
         public event EventHandler CanExecuteChanged;
 
-        public LoginCommand(LoginVM vm)
+        public NotesVM ViewModel { get; set; }
+
+        public EditCommand(NotesVM vm)
         {
             ViewModel = vm;
         }
@@ -22,7 +24,7 @@ namespace EvernoteClone.ViewModel.Commands
 
         public void Execute(object parameter)
         {
-            //TODO: Call login from ViewModel
+            ViewModel.StartEditing();
         }
     }
 }

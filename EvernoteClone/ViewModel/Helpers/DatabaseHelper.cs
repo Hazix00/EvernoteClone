@@ -21,19 +21,13 @@ namespace EvernoteClone.ViewModel.Helpers
             using (SQLiteConnection conn = new SQLiteConnection(dbFile))
             {
                 conn.CreateTable<T>();
-                var actionMethod = conn.GetType().GetMethod(action.ToString()).MakeGenericMethod(typeof(T));
-                var rows = (int)actionMethod.Invoke(conn, new object[] { item });
-                return rows > 0;
-                //switch (action)
-                //{
-                //    case CUDAction.Insert:
-                //        return conn.Insert(item) > 0;
-                //    case CUDAction.Update:
-                //        return conn.Update(item) > 0;
-                //    case CUDAction.Delete:
-                //        return conn.Delete(item) > 0;
-                //}
-                //return false;
+                return action switch
+                {
+                    CUDAction.Insert => conn.Insert(item) > 0,
+                    CUDAction.Update => conn.Update(item) > 0,
+                    CUDAction.Delete => conn.Delete(item) > 0,
+                    _ => false,
+                };
             }
         }
 
