@@ -24,7 +24,14 @@ namespace EvernoteClone.View
     /// </summary>
     public partial class NotesWindow : Window
     {
-        NotesVM viewModel;
+        readonly NotesVM viewModel;
+        /// <summary>
+        /// get The content in the contentRichTextBox
+        /// </summary>
+        private TextRange GetTextRange =>
+            new TextRange(contentRichTextBox.Document.ContentStart, contentRichTextBox.Document.ContentEnd);
+        private TextSelection GetSelection => contentRichTextBox.Selection;
+
 
         public NotesWindow()
         {
@@ -47,9 +54,10 @@ namespace EvernoteClone.View
             {
                 if (!string.IsNullOrEmpty(viewModel.SelectedNote.FileLocation))
                 {
-                    FileStream fileStream = new FileStream(viewModel.SelectedNote.FileLocation, FileMode.Open);
-                    var contents = new TextRange(contentRichTextBox.Document.ContentStart, contentRichTextBox.Document.ContentEnd);
-                    contents.Load(fileStream, DataFormats.Rtf);
+                    using (FileStream fileStream = new FileStream(viewModel.SelectedNote.FileLocation, FileMode.Open))
+                    {
+                        GetTextRange.Load(fileStream, DataFormats.Rtf);
+                    }
                 }
             }
         }
@@ -77,7 +85,7 @@ namespace EvernoteClone.View
 
         private void contentRichTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            int amountOfCharacters = (new TextRange(contentRichTextBox.Document.ContentStart, contentRichTextBox.Document.ContentEnd)).Text.Length;
+            int amountOfCharacters = GetTextRange.Text.Length;
             statusTextBlock.Text = $"Document length: {amountOfCharacters} characters.";
         }
 
@@ -85,36 +93,33 @@ namespace EvernoteClone.View
         {
             bool isButtonChecked = (sender as ToggleButton).IsChecked ?? false;
 
-            if (isButtonChecked)
-                contentRichTextBox.Selection.ApplyPropertyValue(Inline.FontWeightProperty, FontWeights.Bold);
-            else
-                contentRichTextBox.Selection.ApplyPropertyValue(Inline.FontWeightProperty, FontWeights.Normal);
+            FontWeight fontWeight = isButtonChecked ? FontWeights.Bold : FontWeights.Normal;
 
+            GetSelection.ApplyPropertyValue(Inline.FontWeightProperty, fontWeight);
         }
 
         private void contentRichTextBox_SelectionChanged(object sender, RoutedEventArgs e)
         {
-            var selectedWeight = contentRichTextBox.Selection.GetPropertyValue(FontWeightProperty);
-            boldButton.IsChecked = (selectedWeight != DependencyProperty.UnsetValue) && (selectedWeight.Equals(FontWeights.Bold));
+            var selectedWeight = GetSelection.GetPropertyValue(FontWeightProperty);
+            boldButton.IsChecked = (selectedWeight != DependencyProperty.UnsetValue) && selectedWeight.Equals(FontWeights.Bold);
 
-            var selectedStyle = contentRichTextBox.Selection.GetPropertyValue(FontStyleProperty);
-            italicButton.IsChecked = (selectedStyle != DependencyProperty.UnsetValue) && (selectedStyle.Equals(FontStyles.Italic));
+            var selectedStyle = GetSelection.GetPropertyValue(FontStyleProperty);
+            italicButton.IsChecked = (selectedStyle != DependencyProperty.UnsetValue) && selectedStyle.Equals(FontStyles.Italic);
 
-            var selectedDecoration = contentRichTextBox.Selection.GetPropertyValue(Inline.TextDecorationsProperty);
+            var selectedDecoration = GetSelection.GetPropertyValue(Inline.TextDecorationsProperty);
             underlineButton.IsChecked = (selectedDecoration != DependencyProperty.UnsetValue) && selectedDecoration.Equals(TextDecorations.Underline);
 
-            fontFamilyComboBox.SelectedItem = contentRichTextBox.Selection.GetPropertyValue(Inline.FontFamilyProperty);
-            fontSizeComboBox.Text = contentRichTextBox.Selection.GetPropertyValue(Inline.FontSizeProperty).ToString();
+            fontFamilyComboBox.SelectedItem = GetSelection.GetPropertyValue(Inline.FontFamilyProperty);
+            fontSizeComboBox.Text = GetSelection.GetPropertyValue(Inline.FontSizeProperty).ToString();
         }
 
         private void italicButton_Click(object sender, RoutedEventArgs e)
         {
             bool isButtonChecked = (sender as ToggleButton).IsChecked ?? false;
 
-            if (isButtonChecked)
-                contentRichTextBox.Selection.ApplyPropertyValue(Inline.FontStyleProperty, FontStyles.Italic);
-            else
-                contentRichTextBox.Selection.ApplyPropertyValue(Inline.FontStyleProperty, FontStyles.Normal);
+            FontStyle fontStyle = isButtonChecked ? FontStyles.Italic : FontStyles.Normal;
+
+            GetSelection.ApplyPropertyValue(Inline.FontStyleProperty, fontStyle);
         }
 
         private void underlineButton_Click(object sender, RoutedEventArgs e)
@@ -122,26 +127,27 @@ namespace EvernoteClone.View
             bool isButtonChecked = (sender as ToggleButton).IsChecked ?? false;
 
             if (isButtonChecked)
-                contentRichTextBox.Selection.ApplyPropertyValue(Inline.TextDecorationsProperty, TextDecorations.Underline);
+            {
+                GetSelection.ApplyPropertyValue(Inline.TextDecorationsProperty, TextDecorations.Underline);
+            }
             else
             {
                 TextDecorationCollection textDecorations;
-                (contentRichTextBox.Selection.GetPropertyValue(Inline.TextDecorationsProperty) as TextDecorationCollection).TryRemove(TextDecorations.Underline, out textDecorations);
-                contentRichTextBox.Selection.ApplyPropertyValue(Inline.TextDecorationsProperty, textDecorations);
+                (GetSelection.GetPropertyValue(Inline.TextDecorationsProperty) as TextDecorationCollection).TryRemove(TextDecorations.Underline, out textDecorations);
+                GetSelection.ApplyPropertyValue(Inline.TextDecorationsProperty, textDecorations);
             }
         }
 
         private void fontFamilyComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if(fontFamilyComboBox.SelectedItem != null)
-            {
-                contentRichTextBox.Selection.ApplyPropertyValue(Inline.FontFamilyProperty, fontFamilyComboBox.SelectedItem);
-            }
+            if (fontFamilyComboBox.SelectedItem == null) return;
+
+            GetSelection.ApplyPropertyValue(Inline.FontFamilyProperty, fontFamilyComboBox.SelectedItem);
         }
 
         private void fontSizeComboBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            contentRichTextBox.Selection.ApplyPropertyValue(Inline.FontSizeProperty, fontSizeComboBox.Text);
+            GetSelection.ApplyPropertyValue(Inline.FontSizeProperty, fontSizeComboBox.Text);
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -150,9 +156,10 @@ namespace EvernoteClone.View
             viewModel.SelectedNote.FileLocation = rtfFile;
             DatabaseHelper.Update(viewModel.SelectedNote);
 
-            FileStream fileStream = new FileStream(rtfFile, FileMode.Create);
-            var contents = new TextRange(contentRichTextBox.Document.ContentStart, contentRichTextBox.Document.ContentEnd);
-            contents.Save(fileStream, DataFormats.Rtf);
+            using (FileStream fileStream = new FileStream(rtfFile, FileMode.Create))
+            {
+                GetTextRange.Save(fileStream, DataFormats.Rtf);
+            }
         }
     }
 }
